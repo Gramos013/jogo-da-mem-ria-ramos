@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>MemoryMatch - Jogo da Memória</title>
+  <meta name="description" content="Jogo da memória divertido com 18 cartas. Encontre todos os pares!" />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 16 16%22><text y=%2214%22 font-size=%2214%22>🧠</text></svg>" />
+
+  <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@400;700&display=swap" rel="stylesheet" />
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html, body {
+      height: 100%;
+      background: linear-gradient(135deg, #1a1a2e, #16213e);
+      font-family: 'Lexend', sans-serif;
+      color: #fff;
+    }
+
+    body {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      min-height: 100vh;
+    }
+
+    .container {
+      width: 800px;
+      max-width: 100%;
+      padding: 30px;
+      background-color: #0f0f1a;
+      border-radius: 16px;
+      box-shadow: 0 0 40px rgba(0, 255, 255, 0.15);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 20px;
+    }
+
+    .logo {
+      font-size: 2.5rem;
+      font-weight: bold;
+      background: linear-gradient(90deg, #00feba, #5b86e5);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 10px;
+      text-shadow: 0 0 10px rgba(0,255,255,0.2);
+      user-select: none;
+    }
+
+    .logo span {
+      font-family: 'Lexend', sans-serif;
+      letter-spacing: 1px;
+    }
+
+    h1 {
+      font-size: 2.5rem;
+      user-select: none;
+    }
+
+    .start-screen, .game-screen {
+      width: 100%;
+      transition: opacity 0.5s ease;
+    }
+
+    .start-screen {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    #startButton {
+      margin-top: 20px;
+      padding: 14px 32px;
+      font-size: 18px;
+      font-weight: bold;
+      border: none;
+      border-radius: 10px;
+      background: linear-gradient(90deg, #00c9ff, #92fe9d);
+      color: #000;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: 0 0 15px rgba(0,255,255,0.3);
+      user-select: none;
+    }
+
+    #startButton:hover {
+      transform: scale(1.05);
+      box-shadow: 0 0 25px rgba(0,255,255,0.6);
+    }
+
+    .game-board {
+      display: grid;
+      grid-template-columns: repeat(6, 100px);
+      gap: 12px;
+      justify-content: center;
+      margin-top: 20px;
+    }
+
+    .card {
+      width: 100px;
+      height: 100px;
+      background-color: transparent;
+      perspective: 1000px;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .card-inner {
+      width: 100%;
+      height: 100%;
+      position: relative;
+      transform-style: preserve-3d;
+      transition: transform 0.6s;
+      border-radius: 10px;
+    }
+
+    .card.flipped .card-inner {
+      transform: rotateY(180deg);
+    }
+
+    .card-front, .card-back {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      backface-visibility: hidden;
+      border-radius: 10px;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
+      user-select: none;
+    }
+
+    .card-front {
+      background-color: #444;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2rem;
+      color: #ddd;
+      user-select: none;
+    }
+
+    .card-back {
+      transform: rotateY(180deg);
+      background-size: cover;
+      background-position: center;
+      user-select: none;
+    }
+
+    @media (max-width: 650px) {
+      .container {
+        width: 95vw;
+        padding: 20px;
+      }
+      .game-board {
+        grid-template-columns: repeat(4, 80px);
+        gap: 10px;
+      }
+      .card {
+        width: 80px;
+        height: 80px;
+      }
+      h1 {
+        font-size: 1.8rem;
+      }
+      #startButton {
+        padding: 12px 24px;
+        font-size: 16px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="logo">
+      🧠 <span>MemoryMatch</span>
+    </div>
+
+    <!-- Tela Inicial -->
+    <div class="start-screen" id="startScreen">
+      <h1>Jogo da Memória</h1>
+      <button id="startButton">▶ Iniciar Jogo</button>
+    </div>
+
+    <!-- Tela do Jogo -->
+    <div class="game-screen hidden" id="gameScreen">
+      <h1>Encontre os pares!</h1>
+      <div class="game-board" id="gameBoard"></div>
+    </div>
+  </div>
+
+  <script>
+    const startScreen = document.getElementById('startScreen');
+    const gameScreen = document.getElementById('gameScreen');
+    const gameBoard = document.getElementById('gameBoard');
+    const startButton = document.getElementById('startButton');
+
+    startButton.addEventListener('click', () => {
+      startScreen.classList.add('hidden');
+      gameScreen.classList.remove('hidden');
+      initializeGame();
+    });
+
+    function initializeGame() {
+      // Imagens: adicione sua pasta "img" e coloque img1.jpg até img9.jpg
+      const images = [
+      "https://th.bing.com/th/id/R.ad77504c379379f8c9ce804f245a6da3?rik=TxkdhX1UaRzOHA&riu=http%3a%2f%2fwww.ahnegao.com.br%2fwp-content%2fuploads%2f2017%2f06%2fimg-12-3.jpg&ehk=96mByFABizmyyab1Xb4qvggry0C7CG3QxX8ltufKxL0%3d&risl=&pid=ImgRaw&r=0", "https://www.ahnegao.com.br/wp-content/uploads/2016/11/imagens-18.jpg", "https://www.ahnegao.com.br/wp-content/uploads/2024/01/imgaleat-6ko-29.jpg",
+      "https://www.ahnegao.com.br/wp-content/uploads/2021/11/aleat-pic-1.jpg", "https://www.ahnegao.com.br/wp-content/uploads/2024/08/imgaleat-6sh-26.jpg", "https://www.ahnegao.com.br/wp-content/uploads/2015/08/imgs-111.jpg",
+      "https://th.bing.com/th/id/OIP.FoptSUvZXC0_tQ3Jta3vMgHaFj?rs=1&pid=ImgDetMain&cb=idpwebp2&o=7&rm=3", "https://storage.googleapis.com/stateless-novovinteconto-com-b/2022/12/094fd6ae-309103972_147447014653072_7658789594062212199_n.png", "https://www.ahnegao.com.br/wp-content/uploads/2024/05/imgaleat-6qm-1.jpg"
+    ];
+
+      // Duplicar e embaralhar cartas
+      let cards = [...images, ...images];
+      cards.sort(() => 0.5 - Math.random());
+
+      let firstCard = null;
+      let secondCard = null;
+      let lockBoard = false;
+
+      gameBoard.innerHTML = '';
+
+      cards.forEach((imgPath) => {
+        const card = document.createElement('div');
+        card.classList.add('card');
+        card.dataset.image = imgPath;
+
+        card.innerHTML = `
+          <div class="card-inner">
+            <div class="card-front">❓</div>
+            <div class="card-back" style="background-image: url('${imgPath}')"></div>
+          </div>
+        `;
+
+        card.addEventListener('click', () => {
+          if (lockBoard || card.classList.contains('flipped')) return;
+
+          card.classList.add('flipped');
+
+          if (!firstCard) {
+            firstCard = card;
+          } else {
+            secondCard = card;
+            lockBoard = true;
+
+            if (firstCard.dataset.image === secondCard.dataset.image) {
+              firstCard = null;
+              secondCard = null;
+              lockBoard = false;
+            } else {
+              setTimeout(() => {
+                firstCard.classList.remove('flipped');
+                secondCard.classList.remove('flipped');
+                firstCard = null;
+                secondCard = null;
+                lockBoard = false;
+              }, 1000);
+            }
+          }
+        });
+
+        gameBoard.appendChild(card);
+      });
+    }
+  </script>
+</body>
+</html>
